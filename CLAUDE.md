@@ -148,6 +148,7 @@ Calc_anchorage/
 * `npm run dev`: 로컬 개발 서버 실행
 * `npm run test:parity`: 참조 계산서(`Ch07`) 전 구간 수치 대비 **유사율 100% 자동 검증 테스트** 실행
 * `npm run build`: 타입 체크 및 프로덕션 정적 빌드 검증
+* `npm run deploy:sync`: **변경사항 발생 시 즉각 반영 파이프라인** — SSOT 감사, 유사율 100% 테스트, `README.md` 동기화(3번), 프로덕션 빌드 후 `git push origin main`을 통해 GitHub Pages 라이브 서비스(2번)에 즉시 자동 배포한다.
 
 ---
 

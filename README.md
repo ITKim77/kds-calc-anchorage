@@ -2,7 +2,8 @@
 
 > **Live Web App (GitHub Pages)**: **[https://itkim77.github.io/kds-calc-anchorage/](https://itkim77.github.io/kds-calc-anchorage/)**  
 > **Reference Standard**: `KDS 24 14 21:2025 (콘크리트교 설계기준 - 한계상태설계법 4.5.4 ~ 4.5.5)` & `CEB-FIP 1990 / 2010`  
-> **Reference Calculation Parity**: `[쌓기부 역T형옹벽] Ch07 철근 정착 및 이음길이(변경)_26.11.24.pdf` 대비 **유사율 100.0% 검증 완료 (`9/9 Golden Tests Passed`)**
+> **Reference Calculation Parity**: `[쌓기부 역T형옹벽] Ch07 철근 정착 및 이음길이(변경)_26.11.24.pdf` 대비 **유사율 100.0% 검증 완료 (`9/9 Golden Tests Passed`)**  
+> **Live Sync Status**: `VERIFIED (9/9 Parity Tests PASS | SSOT 3-Color PASS | Auto-Deploy Active)`
 
 ---
 
