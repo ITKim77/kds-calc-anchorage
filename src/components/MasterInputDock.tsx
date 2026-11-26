@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AnchorageInputState,
   BarShape,
@@ -18,17 +18,98 @@ export interface MasterInputDockProps {
 
 const ALL_DIAMETERS: RebarDiameter[] = [13, 16, 19, 22, 25, 29, 32, 35];
 
+type NumericFieldKey =
+  | 'fy'
+  | 'fck'
+  | 'cover'
+  | 'ctc'
+  | 'spliceAlpha6'
+  | 'rebarUsageRatioAnchorage'
+  | 'rebarUsageRatioSplice';
+
 /**
  * 단일 입력 패널 (SSOT MasterInputDock)
- * - 우측의 간단 계산 과정이나 표가 펼쳐져도 절대 세로로 늘어나지 않도록 고유 높이 고정
- * - 간격계수(Cd)는 정착과 이음에서 동일하므로 불필요한 '정착시 제외됨' 토글 제거
- * - 철근 직경 H13 ~ H35 (32, 35 포함) 지원
+ * - 숫자 입력창을 직접 지우고 타이핑할 때 앞자리에 강제 기본값(30, 125 등)이 붙지 않도록
+ *   로컬 문자열 버퍼(drafts)를 통해 빈 문자열("") 상태를 허용하고, 유효 숫자 입력 시 즉시 반영 및 onBlur 시 보정
  */
 export const MasterInputDock: React.FC<MasterInputDockProps> = ({
   state,
   onChange,
   onReset,
 }) => {
+  const [drafts, setDrafts] = useState<Record<NumericFieldKey, string>>({
+    fy: String(state.fy),
+    fck: String(state.fck),
+    cover: String(state.cover),
+    ctc: String(state.ctc),
+    spliceAlpha6: String(state.spliceAlpha6),
+    rebarUsageRatioAnchorage: String(state.rebarUsageRatioAnchorage),
+    rebarUsageRatioSplice: String(state.rebarUsageRatioSplice),
+  });
+
+  // 외부 상태(초기화 등)가 변경되면 입력창 표시 문자열 동기화
+  useEffect(() => {
+    setDrafts({
+      fy: String(state.fy),
+      fck: String(state.fck),
+      cover: String(state.cover),
+      ctc: String(state.ctc),
+      spliceAlpha6: String(state.spliceAlpha6),
+      rebarUsageRatioAnchorage: String(state.rebarUsageRatioAnchorage),
+      rebarUsageRatioSplice: String(state.rebarUsageRatioSplice),
+    });
+  }, [
+    state.fy,
+    state.fck,
+    state.cover,
+    state.ctc,
+    state.spliceAlpha6,
+    state.rebarUsageRatioAnchorage,
+    state.rebarUsageRatioSplice,
+  ]);
+
+  const handleNumericChange = (
+    field: NumericFieldKey,
+    rawValue: string,
+    extraPatch?: Partial<AnchorageInputState>
+  ) => {
+    setDrafts((prev) => ({ ...prev, [field]: rawValue }));
+
+    // 사용자가 백스페이스로 모두 지운 동안에는 강제 숫자를 덮어씌우지 않고 그대로 유지
+    if (rawValue.trim() === '') {
+      return;
+    }
+
+    const parsed = Number(rawValue);
+    if (!Number.isNaN(parsed) && parsed > 0) {
+      onChange({
+        [field]: parsed,
+        ...extraPatch,
+      });
+    }
+  };
+
+  const handleNumericBlur = (
+    field: NumericFieldKey,
+    fallback: number,
+    min: number,
+    max: number,
+    extraPatch?: Partial<AnchorageInputState>
+  ) => {
+    const raw = drafts[field].trim();
+    const parsed = Number(raw);
+    const validNumber =
+      raw === '' || Number.isNaN(parsed)
+        ? fallback
+        : Math.min(Math.max(parsed, min), max);
+
+    setDrafts((prev) => ({ ...prev, [field]: String(validNumber) }));
+    onChange({
+      [field]: validNumber,
+      ...extraPatch,
+    });
+  };
+
   return (
     <div className="bg-white border-2 border-slate-200 rounded-2xl shadow-sm overflow-hidden">
       {/* 상단 헤더 */}
@@ -98,8 +179,9 @@ export const MasterInputDock: React.FC<MasterInputDockProps> = ({
                 min={200}
                 max={800}
                 step={10}
-                value={state.fy}
-                onChange={(e) => onChange({ fy: Number(e.target.value) || 400 })}
+                value={drafts.fy}
+                onChange={(e) => handleNumericChange('fy', e.target.value)}
+                onBlur={() => handleNumericBlur('fy', 400, 100, 1000)}
                 className="w-full px-4 py-3 pr-14 rounded-xl border-2 border-red-300 focus:border-[#DC2626] focus:outline-none font-mono text-lg font-bold text-[#DC2626] bg-red-50/20"
               />
               <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-mono">
@@ -119,8 +201,9 @@ export const MasterInputDock: React.FC<MasterInputDockProps> = ({
                 min={18}
                 max={90}
                 step={1}
-                value={state.fck}
-                onChange={(e) => onChange({ fck: Number(e.target.value) || 35 })}
+                value={drafts.fck}
+                onChange={(e) => handleNumericChange('fck', e.target.value)}
+                onBlur={() => handleNumericBlur('fck', 35, 10, 120)}
                 className="w-full px-4 py-3 pr-14 rounded-xl border-2 border-red-300 focus:border-[#DC2626] focus:outline-none font-mono text-lg font-bold text-[#DC2626] bg-red-50/20"
               />
               <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-mono">
@@ -140,13 +223,17 @@ export const MasterInputDock: React.FC<MasterInputDockProps> = ({
               <input
                 id="input-cover"
                 type="number"
-                min={10}
-                max={300}
+                min={5}
+                max={500}
                 step={5}
-                value={state.cover}
+                value={drafts.cover}
                 onChange={(e) =>
-                  onChange({
-                    cover: Math.max(0, Number(e.target.value) || 0),
+                  handleNumericChange('cover', e.target.value, {
+                    ignoreCoverForAnchorage: false,
+                  })
+                }
+                onBlur={() =>
+                  handleNumericBlur('cover', 30, 0, 1000, {
                     ignoreCoverForAnchorage: false,
                   })
                 }
@@ -166,13 +253,17 @@ export const MasterInputDock: React.FC<MasterInputDockProps> = ({
               <input
                 id="input-ctc"
                 type="number"
-                min={50}
-                max={500}
+                min={20}
+                max={1000}
                 step={5}
-                value={state.ctc}
+                value={drafts.ctc}
                 onChange={(e) =>
-                  onChange({
-                    ctc: Math.max(30, Number(e.target.value) || 125),
+                  handleNumericChange('ctc', e.target.value, {
+                    useReferenceFixedClearSpacing: false,
+                  })
+                }
+                onBlur={() =>
+                  handleNumericBlur('ctc', 125, 20, 2000, {
                     useReferenceFixedClearSpacing: false,
                   })
                 }
@@ -299,8 +390,9 @@ export const MasterInputDock: React.FC<MasterInputDockProps> = ({
               min={1.0}
               max={1.5}
               step={0.05}
-              value={state.spliceAlpha6}
-              onChange={(e) => onChange({ spliceAlpha6: Number(e.target.value) || 1.5 })}
+              value={drafts.spliceAlpha6}
+              onChange={(e) => handleNumericChange('spliceAlpha6', e.target.value)}
+              onBlur={() => handleNumericBlur('spliceAlpha6', 1.5, 0.5, 2.0)}
               className="w-full px-3 py-2.5 rounded-xl border-2 border-red-300 focus:border-[#DC2626] focus:outline-none font-mono text-base font-bold text-[#DC2626] bg-red-50/20"
             />
           </div>
@@ -318,9 +410,12 @@ export const MasterInputDock: React.FC<MasterInputDockProps> = ({
               min={0.1}
               max={1.0}
               step={0.05}
-              value={state.rebarUsageRatioAnchorage}
+              value={drafts.rebarUsageRatioAnchorage}
               onChange={(e) =>
-                onChange({ rebarUsageRatioAnchorage: Number(e.target.value) || 1.0 })
+                handleNumericChange('rebarUsageRatioAnchorage', e.target.value)
+              }
+              onBlur={() =>
+                handleNumericBlur('rebarUsageRatioAnchorage', 1.0, 0.1, 1.5)
               }
               className="w-full px-3 py-2.5 rounded-xl border-2 border-red-300 focus:border-[#DC2626] focus:outline-none font-mono text-base font-bold text-[#DC2626] bg-red-50/20"
             />
@@ -339,10 +434,11 @@ export const MasterInputDock: React.FC<MasterInputDockProps> = ({
               min={0.1}
               max={1.0}
               step={0.05}
-              value={state.rebarUsageRatioSplice}
+              value={drafts.rebarUsageRatioSplice}
               onChange={(e) =>
-                onChange({ rebarUsageRatioSplice: Number(e.target.value) || 0.7 })
+                handleNumericChange('rebarUsageRatioSplice', e.target.value)
               }
+              onBlur={() => handleNumericBlur('rebarUsageRatioSplice', 0.7, 0.1, 1.5)}
               className="w-full px-3 py-2.5 rounded-xl border-2 border-red-300 focus:border-[#DC2626] focus:outline-none font-mono text-base font-bold text-[#DC2626] bg-red-50/20"
             />
           </div>

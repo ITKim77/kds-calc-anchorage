@@ -26,10 +26,12 @@ const ALL_TABLE_DIAMETERS: RebarDiameter[] = [13, 16, 19, 22, 25, 29, 32, 35];
 export const App: React.FC = () => {
   const [state, setState] = useState<AnchorageInputState>(DEFAULT_INPUT_STATE);
 
-  // 필요할 때만 클릭해서 여는 토글 상태
-  const [showSteps, setShowSteps] = useState<boolean>(false);
-  const [showTable, setShowTable] = useState<boolean>(false);
+  // 상호 배타적 보기 상태: 'none' | 'steps' | 'table' (하나가 열리면 다른 하나는 자동으로 닫힘)
+  const [activeView, setActiveView] = useState<'none' | 'steps' | 'table'>('none');
   const [showDiagramModal, setShowDiagramModal] = useState<boolean>(false);
+
+  const showSteps = activeView === 'steps';
+  const showTable = activeView === 'table';
 
   const currentResult = useMemo(() => calculateForDiameter(state, state.db), [state]);
   const allResults = useMemo(
@@ -43,6 +45,10 @@ export const App: React.FC = () => {
 
   const handleSelectDiameter = (db: RebarDiameter) => {
     setState((prev) => ({ ...prev, db }));
+  };
+
+  const toggleView = (target: 'steps' | 'table') => {
+    setActiveView((prev) => (prev === target ? 'none' : target));
   };
 
   return (
@@ -89,7 +95,7 @@ export const App: React.FC = () => {
             />
           </aside>
 
-          {/* 우측 (7칸): 대형 계산 결과 카드 + 선택형 펼침 영역 */}
+          {/* 우측 (7칸): 대형 계산 결과 카드 + 상호 배타적 선택형 펼침 영역 */}
           <section className="lg:col-span-7 flex flex-col space-y-5">
             {/* 1. 핵심 계산 결과 카드 */}
             <div className="bg-white border-2 border-slate-200 rounded-2xl shadow-sm p-7 flex flex-col justify-between">
@@ -183,11 +189,11 @@ export const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* 하단 큼직한 액션 버튼 바 */}
+              {/* 하단 큼직한 액션 버튼 바 (계산과정 보기와 표 보기는 상호 배타적 작동) */}
               <div className="mt-8 pt-6 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <button
                   type="button"
-                  onClick={() => setShowSteps((v) => !v)}
+                  onClick={() => toggleView('steps')}
                   className={`py-4 px-4 rounded-xl text-sm font-bold border-2 transition-colors flex items-center justify-center gap-2 ${
                     showSteps
                       ? 'bg-slate-900 text-white border-slate-900'
@@ -205,7 +211,7 @@ export const App: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => setShowTable((v) => !v)}
+                  onClick={() => toggleView('table')}
                   className={`py-4 px-4 rounded-xl text-sm font-bold border-2 transition-colors flex items-center justify-center gap-2 ${
                     showTable
                       ? 'bg-slate-900 text-white border-slate-900'
@@ -232,10 +238,10 @@ export const App: React.FC = () => {
               </div>
             </div>
 
-            {/* 2. [선택 펼침] 간단한 계산 과정 */}
+            {/* 2. [선택 펼침 1] 간단한 계산 과정 (표 보기가 열리면 자동 닫힘) */}
             {showSteps && <EasyExplainerCards state={state} result={currentResult} />}
 
-            {/* 3. [선택 펼침] 철근 굵기별(H13~H35) 정착장 및 겹이음 테이블 */}
+            {/* 3. [선택 펼침 2] 철근 굵기별(H13~H35) 정착장 및 겹이음 테이블 (계산 과정이 열리면 자동 닫힘) */}
             {showTable && (
               <div className="bg-white border-2 border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                 <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
