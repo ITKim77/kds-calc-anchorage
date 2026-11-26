@@ -33,16 +33,21 @@
 
 ## 3. 도메인 수식 및 참조 계산서 100% 정합성 검증 (Domain Logic & 100% Parity)
 
-### 3.1. 핵심 산정 수식 요약
-1. **설계 부착강도 ($f_{bd}$)**:
-   $$f_{bd} = 2.25 \cdot f_{ctk} \cdot \phi_c \cdot \eta_1 \cdot \eta_2$$
-   * $f_{ctk} = 0.7 \cdot f_{ctm} = 0.7 \times \left(0.30 \cdot (f_{ck} + \Delta f)^{2/3}\right)$ ($f_{ck}=35\text{ MPa}$일 때 $f_{ctk} = 2.415\text{ MPa}$)
-2. **기본정착길이 ($l_{b,t}, l_{b,c}$)**:
+### 3.1. 참조 계산서(Ch07) 5단계 산정 흐름 요약
+1. **기본정착길이 ($l_b$) 산정**:
+   * 설계 부착강도: $f_{bd} = 2.25 \cdot f_{ctk} \cdot \phi_c \cdot \eta_1 \cdot \eta_2$ ($f_{ck}=35\text{ MPa}$일 때 $f_{ctk} = 2.415\text{ MPa}$)
    * 인장측: $l_{b,t} = \text{round}_{10}\left(\frac{d_b \cdot f_{yd}}{4 \cdot f_{bd}}\right) = \text{round}_{10}\left(25.48 \cdot \frac{d_b}{\eta_1}\right)$
-   * 압축측(선단지압 $15d_b$ 반영): $l_{b,c} = \text{round}_{10}\left(25.48 \cdot \frac{d_b}{\eta_1} - 15 d_b\right)$
-3. **설계정착길이 ($l_{bd}$) 및 설계겹이음길이 ($l_o$)**:
-   * $l_{bd} = \max\left(\text{round}_{10}\left(\alpha \cdot l_b \cdot \frac{A_{s,req}}{A_{s,used}}\right),\ \text{round}_{10}(15 d_b)\right)$
-   * $l_o = \max\left(\text{round}_{10}\left(\alpha_o \cdot l_b \cdot \frac{A_{s,req}}{A_{s,used}}\right),\ \text{round}_{10}(15 d_b)\right)$
+   * 압축측(선단지압 $15d_b$ 차감): $l_{b,c} = \text{round}_{10}\left(\frac{d_b \cdot f_{yd}}{4 \cdot f_{bd}} - 15 d_b\right) = \text{round}_{10}\left(25.48 \cdot \frac{d_b}{\eta_1} - 15 d_b\right)$
+2. **철근영향계수 ($\alpha$) 산정**:
+   * 간격계수 $C_d = \min(a/2, c)$ $\rightarrow$ 형상계수($\alpha_1$), 피복두께계수($\alpha_2$), 겹침이음계수($\alpha_{6,lo}$) $\rightarrow$ 통합 계수 $\alpha = \alpha_1 \cdot \alpha_2 \cdot \alpha_3 \cdot \alpha_4 \cdot \alpha_5 \cdot \alpha_6$
+3. **철근사용률 ($A_{s,req}/A_{s,used}$) 산정**:
+   * 정착부 중요성 고려 기본 `1.0` 적용 / 겹침이음부 응력 고려 기본 `0.7` 적용
+4. **최소정착길이 ($l_{bd,\min}$) 및 최소겹침이음길이 ($l_{o,\min}$) 산정**:
+   * $l_{bd,\min} = \max[0.3 l_{b,t} \text{ (또는 } 0.6 l_{b,c}),\ 15 d_b,\ 100\text{mm}] \Rightarrow 15 d_b$
+   * $l_{o,\min} = \max[0.3 \alpha_{6,lo} l_b,\ 15 d_b,\ 200\text{mm}] \Rightarrow 15 d_b$
+5. **설계정착길이 ($l_{bd}$) 및 설계겹이음길이 ($l_o$) 최종 결정**:
+   * $l_{bd} = \alpha \cdot l_b \cdot (A_{s,req}/A_{s,used}) \ge l_{bd,\min} (15 d_b)$
+   * $l_o = \alpha_o \cdot l_b \cdot (A_{s,req}/A_{s,used}) \ge l_{o,\min} (15 d_b)$
 
 ### 3.2. 참조 계산서(`Ch07`) 골든 정답 대조표 (`100.0% Exact Match`)
 
