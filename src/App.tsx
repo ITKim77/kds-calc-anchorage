@@ -60,9 +60,14 @@ export const App: React.FC = () => {
             <div className="w-10 h-10 rounded-xl bg-slate-900 text-white font-mono font-bold text-base flex items-center justify-center tracking-tight">
               HM
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-              KDS기반 철근 정착 및 겹이음길이 계산기
-            </h1>
+            <div className="flex items-baseline gap-2.5">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                KDS기반 철근 정착 및 겹이음길이 계산기
+              </h1>
+              <span className="text-xs font-mono font-medium text-slate-400">
+                v 1.0.0
+              </span>
+            </div>
           </div>
 
           {/* 3원색 색상 안내 */}

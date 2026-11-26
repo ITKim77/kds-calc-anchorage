@@ -1,4 +1,4 @@
-# 📐 KDS기반 철근 정착 및 겹이음길이 계산기 (`kds-calc-anchorage`)
+# 📐 KDS기반 철근 정착 및 겹이음길이 계산기 (`v 1.0.0`)
 
 > **Live Web App (GitHub Pages)**: **[https://itkim77.github.io/kds-calc-anchorage/](https://itkim77.github.io/kds-calc-anchorage/)**  
 > **Reference Standard**: `KDS 24 14 21:2025 (콘크리트교 설계기준 - 한계상태설계법 4.5.4 ~ 4.5.5)` & `CEB-FIP 1990 / 2010`  
