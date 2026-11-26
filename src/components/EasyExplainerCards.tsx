@@ -10,11 +10,9 @@ export interface EasyExplainerCardsProps {
 
 /**
  * 참조 계산서(Ch07 철근 정착 및 이음길이)의 흐름과 100% 동일한 5단계 계산 과정 컴포넌트
- * 1. 기본정착길이 (l_b) 산정 (7.1.1 부착강도 f_bd -> 7.1.2/7.1.3 l_b = (d_b · f_yd)/(4 · f_bd) [- 15d_b])
- * 2. 철근영향계수 (α) 산정 (7.2.1/7.3.2 간격계수 C_d -> α_1, α_2, α_3~6 -> α = α_1·α_2·α_3·α_4·α_5·α_6)
- * 3. 철근사용률 (A_s,req / A_s,used) 산정 (7.2.4 정착 1.0 / 7.3.3 겹침이음 0.7)
- * 4. 최소정착길이 (l_bd,min) 및 최소겹침이음길이 (l_o,min) 산정 (7.2.5 / 7.3.4 -> 15d_b)
- * 5. 설계정착길이 (l_bd) 및 설계겹이음길이 (l_o) 최종 결정 (7.2.6 / 7.3.4)
+ * - 순간격 a = 철근간격(CTC) - 철근직경(d_b) 로 정확히 계산
+ * - 간격계수 C_d = Min[a / 2, c] 는 정착과 이음 구분 없이 단일 값으로 표시
+ * - 1. 기본정착길이(l_b) -> 2. 철근영향계수(α) -> 3. 철근사용률 -> 4. 최소정착길이(l_bd,min) -> 5. 설계정착길이(l_bd) 및 겹이음길이(l_o) 결정
  */
 export const EasyExplainerCards: React.FC<EasyExplainerCardsProps> = ({
   state,
@@ -22,6 +20,11 @@ export const EasyExplainerCards: React.FC<EasyExplainerCardsProps> = ({
 }) => {
   const isTension = state.stressZone === 'tension';
   const isHook = state.barShape === 'hook';
+
+  // 순간격 a = CTC - db 및 단일 간격계수 Cd = Min[a/2, c]
+  const exactClearSpacingA = Math.max(0, state.ctc - state.db);
+  const exactHalfA = roundTo(exactClearSpacingA / 2, 1);
+  const unifiedCd = roundTo(Math.min(exactHalfA, state.cover), 1);
 
   // 최소정착길이 비교 항목 (계산서 7.2.5절 및 7.3.4절)
   const minAnchorageFactorLb = isTension
@@ -34,7 +37,7 @@ export const EasyExplainerCards: React.FC<EasyExplainerCardsProps> = ({
     <div className="bg-white border-2 border-slate-200 rounded-2xl shadow-sm p-6 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-200">
         <h3 className="text-base font-bold text-slate-900">
-          단계별 계산 과정 (참조 계산서 제7장 수식 흐름)
+          단계별 계산 과정 (참조 계산서 수식 흐름)
         </h3>
         <span className="text-xs font-mono text-slate-500">
           l_bd = α₁·α₂·α₃·α₄·α₅·α₆ · l_b · (A_s,req / A_s,used) ≥ l_bd,min
@@ -114,7 +117,7 @@ export const EasyExplainerCards: React.FC<EasyExplainerCardsProps> = ({
         </div>
 
         {/* ==================================================================
-            STEP 2. 철근영향계수 (α) 산정 (계산서 7.2.1 ~ 7.2.3 & 7.3.2절)
+            STEP 2. 철근영향계수 (α) 산정 (계산서 7.2.1 ~ 7.2.3절)
            ================================================================== */}
         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -138,22 +141,19 @@ export const EasyExplainerCards: React.FC<EasyExplainerCardsProps> = ({
           </div>
 
           <div className="space-y-1.5 font-mono text-xs sm:text-sm bg-white p-3.5 rounded-lg border border-slate-200">
-            {/* ① 간격계수 Cd */}
+            {/* ① 순간격 a = CTC - db 및 단일 간격계수 Cd = Min[a/2, c] */}
             <div className="flex flex-wrap items-center justify-between gap-2 pb-1.5 border-b border-slate-100">
               <span className="text-slate-600 font-sans font-medium">
-                ① 간격계수 <span className="font-mono">C_d = Min[a / 2, c]</span> (순간격{' '}
-                <span className="font-mono">a = {result.clearSpacingA}mm</span>)
+                ① 순간격 <span className="font-mono">a = CTC - d_b</span> 및 간격계수{' '}
+                <span className="font-mono">C_d = Min[a / 2, c]</span>
               </span>
               <span>
-                정착{' '}
-                <SemanticValue
-                  source="computed"
-                  symbol="C_d"
-                  value={result.cdAnchorage}
-                  unit="mm"
-                />{' '}
-                / 이음{' '}
-                <SemanticValue source="computed" symbol="C_d" value={result.cdSplice} unit="mm" />
+                a = <SemanticValue source="input" value={state.ctc} /> -{' '}
+                <SemanticValue source="input" value={state.db} /> ={' '}
+                <SemanticValue source="computed" value={exactClearSpacingA} unit="mm" /> ⇒ C_d =
+                Min(<SemanticValue source="computed" value={exactHalfA} />,{' '}
+                <SemanticValue source="input" value={state.cover} />) ={' '}
+                <SemanticValue source="computed" value={unifiedCd} unit="mm" />
               </span>
             </div>
 
@@ -172,19 +172,13 @@ export const EasyExplainerCards: React.FC<EasyExplainerCardsProps> = ({
                   symbol="α₁"
                   value={result.alpha1Anchorage.toFixed(1)}
                 />{' '}
-                · 정착{' '}
+                ·{' '}
                 <SemanticValue
                   source="computed"
                   symbol="α₂"
                   value={result.alpha2AnchorageDisplay.toFixed(1)}
-                />
-                (이음{' '}
-                <SemanticValue
-                  source="computed"
-                  symbol="α₂"
-                  value={result.alpha2SpliceDisplay.toFixed(1)}
-                />
-                ) · <SemanticValue source="constant" symbol="α₃~₅" value="1.0" />
+                />{' '}
+                · <SemanticValue source="constant" symbol="α₃~₅" value="1.0" />
               </span>
             </div>
 
@@ -209,7 +203,7 @@ export const EasyExplainerCards: React.FC<EasyExplainerCardsProps> = ({
         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="font-bold text-slate-900">
-              3. 철근사용률 (<span className="font-mono text-[#DC2626]">A_s,req / A_s,used</span>) 적용
+              3. 철근사용률 (<span className="font-mono text-[#DC2626]">A_s,req / A_s,used</span>) 산정
             </div>
             <div className="flex items-center gap-2">
               <SemanticValue
@@ -229,7 +223,7 @@ export const EasyExplainerCards: React.FC<EasyExplainerCardsProps> = ({
 
           <div className="font-mono text-xs sm:text-sm bg-white p-3.5 rounded-lg border border-slate-200 flex flex-wrap items-center justify-between gap-2">
             <span className="text-slate-600 font-sans font-medium">
-              정착부는 연결부 중요성을 고려하여 기본 1.0, 겹침이음부는 이음부 응력을 고려하여 기본 0.7 적용
+              정착부 철근사용률 및 겹침이음부 철근사용률 적용
             </span>
             <span>
               정착 <SemanticValue source="input" value={state.rebarUsageRatioAnchorage.toFixed(2)} /> /
@@ -239,12 +233,12 @@ export const EasyExplainerCards: React.FC<EasyExplainerCardsProps> = ({
         </div>
 
         {/* ==================================================================
-            STEP 4. 최소정착길이 (l_bd,min) 및 최소겹침이음길이 (l_o,min) 산정 (계산서 7.2.5 & 7.3.4절)
+            STEP 4. 최소정착길이 (l_bd,min) 산정 (계산서 7.2.5 & 7.3.4절)
            ================================================================== */}
         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2.5">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="font-bold text-slate-900">
-              4. 최소정착길이 (<span className="font-mono text-[#2563EB]">l_bd,min</span>) 및 최소겹침이음길이 (
+              4. 최소정착길이 (<span className="font-mono text-[#2563EB]">l_bd,min</span>) 및 최소이음길이 (
               <span className="font-mono text-[#2563EB]">l_o,min</span>) 산정
             </div>
             <SemanticValue
@@ -259,7 +253,7 @@ export const EasyExplainerCards: React.FC<EasyExplainerCardsProps> = ({
           <div className="space-y-1.5 font-mono text-xs sm:text-sm bg-white p-3.5 rounded-lg border border-slate-200">
             <div className="flex flex-wrap items-center justify-between gap-2 pb-1.5 border-b border-slate-100">
               <span className="text-slate-600 font-sans font-medium">
-                ① 정착 최소길이{' '}
+                ① 최소정착길이{' '}
                 <span className="font-mono">
                   l_bd,min = Max[{isTension ? '0.3·l_b,t' : '0.6·l_b,c'}, 15d_b, 100mm]
                 </span>
@@ -275,7 +269,7 @@ export const EasyExplainerCards: React.FC<EasyExplainerCardsProps> = ({
 
             <div className="pt-1 flex flex-wrap items-center justify-between gap-2">
               <span className="text-slate-600 font-sans font-medium">
-                ② 이음 최소길이{' '}
+                ② 최소이음길이{' '}
                 <span className="font-mono">l_o,min = Max[0.3·α₆,lo·l_b, 15d_b, 200mm]</span>
               </span>
               <span>
@@ -296,7 +290,7 @@ export const EasyExplainerCards: React.FC<EasyExplainerCardsProps> = ({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="font-bold text-slate-900">
               5. 설계정착길이 (<span className="font-mono text-[#2563EB]">l_bd</span>) 및 설계겹이음길이 (
-              <span className="font-mono text-[#2563EB]">l_o</span>) 최종 결정
+              <span className="font-mono text-[#2563EB]">l_o</span>) 결정
             </div>
             <div className="flex items-center gap-2">
               <SemanticValue

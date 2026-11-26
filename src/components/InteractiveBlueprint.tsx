@@ -1,5 +1,6 @@
 import React from 'react';
 import { AnchorageInputState, RebarCalculationResult } from '../core/types';
+import { roundTo } from '../core/anchorageEngine';
 import { SemanticValue } from './SemanticValue';
 
 export interface InteractiveBlueprintProps {
@@ -9,8 +10,8 @@ export interface InteractiveBlueprintProps {
 
 /**
  * 철근 단면 및 중심선 정착길이 그림 (InteractiveBlueprint)
- * - KDS 24 14 21 4.5.4.4(2) 규정: "절곡 철근의 정착길이는 철근의 중심선을 따라 잰 값으로 한다" 반영
- * - 정착길이가 콘크리트 시작면부터 철근 중심선을 따라(갈고리인 경우 곡선부를 거쳐 끝단까지) 이어지도록 명확히 시각화
+ * - 순간격 a = CTC - db 및 단일 간격계수 Cd = Min[a / 2, c] 반영 (이음 Cd 구분 삭제)
+ * - 정착길이는 콘크리트 시작면부터 철근의 중심선을 따라 끝까지로 표현
  */
 export const InteractiveBlueprint: React.FC<InteractiveBlueprintProps> = ({
   state,
@@ -31,7 +32,11 @@ export const InteractiveBlueprint: React.FC<InteractiveBlueprintProps> = ({
   const rebar1X = slabLeftX + visualCover + visualRadius;
   const rebar2X = Math.min(rebar1X + visualCtc, panelAWidth - 65);
 
-  const isCoverIgnored = state.ignoreCoverForAnchorage;
+  // 순간격 a = CTC - db 및 단일 간격계수 Cd = Min[a/2, c]
+  const exactClearA = Math.max(0, state.ctc - state.db);
+  const exactHalfA = roundTo(exactClearA / 2, 1);
+  const unifiedCd = roundTo(Math.min(exactHalfA, state.cover), 1);
+
   const isHook = state.barShape === 'hook' && state.stressZone === 'tension';
   const isCompression = state.stressZone === 'compression';
   const isPoorBond = state.bondCondition === 'poor';
@@ -51,22 +56,25 @@ export const InteractiveBlueprint: React.FC<InteractiveBlueprintProps> = ({
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 그림 1: 철근 단면도 (피복두께와 철근 간격) */}
+        {/* 그림 1: 철근 단면도 (피복두께와 철근 간격 -> 단일 간격계수 Cd = Min[a/2, c]) */}
         <div className="bg-slate-50 border-2 border-slate-200 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-base font-bold text-slate-900">
-              1. 철근 단면 그림 (피복두께와 간격)
+              1. 철근 단면 그림 (순간격 a = CTC - d_b)
             </h4>
             <SemanticValue
               source="computed"
               symbol="간격계수 Cd"
-              value={result.cdAnchorage}
+              value={unifiedCd}
               unit="mm"
               badge
             />
           </div>
           <p className="text-xs text-slate-600 mb-3">
-            콘크리트 표면에서 철근까지의 두께(피복)와 철근 사이 간격 중 더 얇은 쪽이 균열 저항력을 결정합니다.
+            순간격 <span className="font-mono font-semibold">a = {state.ctc} - {state.db} = {exactClearA}mm</span>의 절반(
+            <span className="font-mono font-semibold">a/2 = {exactHalfA}mm</span>)과 순피복두께(
+            <span className="font-mono font-semibold">c = {state.cover}mm</span>) 중 작은 값이 간격계수(
+            <span className="font-mono font-bold text-[#2563EB]">C_d = {unifiedCd}mm</span>)가 됩니다.
           </p>
 
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
@@ -113,7 +121,7 @@ export const InteractiveBlueprint: React.FC<InteractiveBlueprintProps> = ({
                 fontWeight="bold"
                 fontFamily="monospace"
               >
-                간격 CTC = {state.ctc}mm
+                철근간격 CTC = {state.ctc}mm (d_b = {state.db}mm)
               </text>
 
               {/* 피복두께 c 표시 */}
@@ -122,32 +130,41 @@ export const InteractiveBlueprint: React.FC<InteractiveBlueprintProps> = ({
                 y1={rebarCenterY + visualRadius}
                 x2={rebar1X}
                 y2={slabBottomY}
-                stroke={isCoverIgnored ? '#94A3B8' : '#DC2626'}
+                stroke="#DC2626"
                 strokeWidth="2"
               />
               <text
                 x={rebar1X}
                 y={slabBottomY + 24}
                 textAnchor="middle"
-                fill={isCoverIgnored ? '#64748B' : '#DC2626'}
+                fill="#DC2626"
                 fontSize="13"
                 fontWeight="bold"
                 fontFamily="monospace"
               >
-                {isCoverIgnored ? '피복 c = 제외됨' : `피복 c = ${state.cover}mm`}
+                순피복 c = {state.cover}mm
               </text>
 
-              {/* 순간격 절반 a/2 표시 */}
+              {/* 순간격 a 및 a/2 표시 */}
+              <line
+                x1={rebar1X + visualRadius}
+                y1={rebarCenterY}
+                x2={rebar2X - visualRadius}
+                y2={rebarCenterY}
+                stroke="#2563EB"
+                strokeWidth="2"
+                strokeDasharray="4 3"
+              />
               <text
                 x={(rebar1X + rebar2X) / 2}
                 y={rebarCenterY + 26}
                 textAnchor="middle"
                 fill="#2563EB"
-                fontSize="13"
+                fontSize="12.5"
                 fontWeight="bold"
                 fontFamily="monospace"
               >
-                순간격 절반(a/2) = {result.halfClearSpacing}mm
+                a = {exactClearA}mm (a/2 = {exactHalfA}mm) → C_d = {unifiedCd}mm
               </text>
             </svg>
           </div>
@@ -174,20 +191,6 @@ export const InteractiveBlueprint: React.FC<InteractiveBlueprintProps> = ({
 
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
             <svg viewBox={`0 0 ${panelBWidth} ${panelBHeight}`} className="w-full h-auto block">
-              <defs>
-                <marker
-                  id="centerline-arrow"
-                  viewBox="0 0 10 10"
-                  refX="5"
-                  refY="5"
-                  markerWidth="4.5"
-                  markerHeight="4.5"
-                  orient="auto-start-reverse"
-                >
-                  <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563EB" />
-                </marker>
-              </defs>
-
               {/* 콘크리트 블록 */}
               <rect
                 x={barStartX}
@@ -268,14 +271,12 @@ export const InteractiveBlueprint: React.FC<InteractiveBlueprintProps> = ({
               {/* 2) 철근 중심선을 따라 끝까지 이어지는 정착길이(l_bd) 표시선 (Blue + White Halo) */}
               {isHook ? (
                 <g>
-                  {/* 흰색 배경선 (가독성 확보) */}
                   <path
                     d={`M ${barStartX} ${barCenterY} L ${barEndX - 14} ${barCenterY} Q ${hookCenterX} ${barCenterY} ${hookCenterX} ${barCenterY - 26} L ${hookCenterX} ${hookTipY}`}
                     fill="none"
                     stroke="#FFFFFF"
                     strokeWidth="6"
                   />
-                  {/* 파란색 중심선 (정착 시작면 -> 곡선부 -> 갈고리 끝단까지) */}
                   <path
                     d={`M ${barStartX} ${barCenterY} L ${barEndX - 14} ${barCenterY} Q ${hookCenterX} ${barCenterY} ${hookCenterX} ${barCenterY - 26} L ${hookCenterX} ${hookTipY}`}
                     fill="none"
@@ -283,7 +284,6 @@ export const InteractiveBlueprint: React.FC<InteractiveBlueprintProps> = ({
                     strokeWidth="3"
                     strokeDasharray="6 4"
                   />
-                  {/* 시작점(정착 시작면 중심) & 끝점(갈고리 끝단 중심) 마커 */}
                   <circle cx={barStartX} cy={barCenterY} r="5" fill="#2563EB" stroke="#FFFFFF" strokeWidth="1.5" />
                   <circle cx={hookCenterX} cy={hookTipY} r="5" fill="#2563EB" stroke="#FFFFFF" strokeWidth="1.5" />
                   <text
@@ -298,7 +298,6 @@ export const InteractiveBlueprint: React.FC<InteractiveBlueprintProps> = ({
                 </g>
               ) : (
                 <g>
-                  {/* 직선 철근 중심선 (정착 시작면 -> 철근 끝단까지) */}
                   <line
                     x1={barStartX}
                     y1={barCenterY}

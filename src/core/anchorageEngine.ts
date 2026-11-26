@@ -97,7 +97,7 @@ export function calculateForDiameter(
   // 참조 계산서 대표 순간격 모드일 경우 기준 직경 25mm로 a = CTC - 25 (CTC=125 -> a=100 -> a/2=50)
   const refBarDiameter = state.useReferenceFixedClearSpacing ? 25 : targetDb;
   const clearSpacingA = Math.max(0, state.ctc - refBarDiameter);
-  const halfClearSpacing = clearSpacingA / 2;
+  const halfClearSpacing = roundTo(clearSpacingA / 2, 2);
 
   const cdAnchorage = state.ignoreCoverForAnchorage
     ? halfClearSpacing

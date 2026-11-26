@@ -20,9 +20,9 @@ const ALL_DIAMETERS: RebarDiameter[] = [13, 16, 19, 22, 25, 29, 32, 35];
 
 /**
  * 단일 입력 패널 (SSOT MasterInputDock)
- * - 예제 불러오기 제거
+ * - 우측의 간단 계산 과정이나 표가 펼쳐져도 절대 세로로 늘어나지 않도록 고유 높이 고정
+ * - 간격계수(Cd)는 정착과 이음에서 동일하므로 불필요한 '정착시 제외됨' 토글 제거
  * - 철근 직경 H13 ~ H35 (32, 35 포함) 지원
- * - 한 화면에 꽉 차도록 큼직하고 시원한 컨트롤 크기 적용
  */
 export const MasterInputDock: React.FC<MasterInputDockProps> = ({
   state,
@@ -30,7 +30,7 @@ export const MasterInputDock: React.FC<MasterInputDockProps> = ({
   onReset,
 }) => {
   return (
-    <div className="bg-white border-2 border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between h-full">
+    <div className="bg-white border-2 border-slate-200 rounded-2xl shadow-sm overflow-hidden">
       {/* 상단 헤더 */}
       <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
         <div className="flex items-center gap-2.5">
@@ -50,8 +50,8 @@ export const MasterInputDock: React.FC<MasterInputDockProps> = ({
         )}
       </div>
 
-      {/* 9대 핵심 입력 폼 (SSOT - Red Color Coding, 대형화) */}
-      <div className="p-6 space-y-5 flex-1 flex flex-col justify-between">
+      {/* 9대 핵심 입력 폼 (SSOT - Red Color Coding) */}
+      <div className="p-6 space-y-5">
         {/* 1. 철근 직경 (db: H13 ~ H35) */}
         <div>
           <div className="flex items-center justify-between mb-2">
@@ -133,24 +133,9 @@ export const MasterInputDock: React.FC<MasterInputDockProps> = ({
         {/* 4 & 5. 피복두께(c) / 철근간격(CTC) */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label htmlFor="input-cover" className="text-sm font-bold text-slate-800">
-                4. 피복두께 (c)
-              </label>
-              <button
-                type="button"
-                onClick={() =>
-                  onChange({ ignoreCoverForAnchorage: !state.ignoreCoverForAnchorage })
-                }
-                className={`text-xs px-2 py-0.5 rounded-md border ${
-                  state.ignoreCoverForAnchorage
-                    ? 'bg-red-50 border-[#DC2626] text-[#DC2626] font-bold'
-                    : 'bg-slate-100 border-slate-300 text-slate-600'
-                }`}
-              >
-                {state.ignoreCoverForAnchorage ? '정착시 제외됨' : '정착시 포함'}
-              </button>
-            </div>
+            <label htmlFor="input-cover" className="block text-sm font-bold text-slate-800 mb-1.5">
+              4. 순피복두께 (c)
+            </label>
             <div className="relative">
               <input
                 id="input-cover"
@@ -159,7 +144,12 @@ export const MasterInputDock: React.FC<MasterInputDockProps> = ({
                 max={300}
                 step={5}
                 value={state.cover}
-                onChange={(e) => onChange({ cover: Math.max(0, Number(e.target.value) || 0) })}
+                onChange={(e) =>
+                  onChange({
+                    cover: Math.max(0, Number(e.target.value) || 0),
+                    ignoreCoverForAnchorage: false,
+                  })
+                }
                 className="w-full px-4 py-3 pr-12 rounded-xl border-2 border-red-300 focus:border-[#DC2626] focus:outline-none font-mono text-lg font-bold text-[#DC2626] bg-red-50/20"
               />
               <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-mono">
@@ -180,7 +170,12 @@ export const MasterInputDock: React.FC<MasterInputDockProps> = ({
                 max={500}
                 step={5}
                 value={state.ctc}
-                onChange={(e) => onChange({ ctc: Math.max(30, Number(e.target.value) || 125) })}
+                onChange={(e) =>
+                  onChange({
+                    ctc: Math.max(30, Number(e.target.value) || 125),
+                    useReferenceFixedClearSpacing: false,
+                  })
+                }
                 className="w-full px-4 py-3 pr-12 rounded-xl border-2 border-red-300 focus:border-[#DC2626] focus:outline-none font-mono text-lg font-bold text-[#DC2626] bg-red-50/20"
               />
               <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-sm text-slate-500 font-mono">

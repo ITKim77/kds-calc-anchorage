@@ -39,7 +39,7 @@
    * 인장측: $l_{b,t} = \text{round}_{10}\left(\frac{d_b \cdot f_{yd}}{4 \cdot f_{bd}}\right) = \text{round}_{10}\left(25.48 \cdot \frac{d_b}{\eta_1}\right)$
    * 압축측(선단지압 $15d_b$ 차감): $l_{b,c} = \text{round}_{10}\left(\frac{d_b \cdot f_{yd}}{4 \cdot f_{bd}} - 15 d_b\right) = \text{round}_{10}\left(25.48 \cdot \frac{d_b}{\eta_1} - 15 d_b\right)$
 2. **철근영향계수 ($\alpha$) 산정**:
-   * 간격계수 $C_d = \min(a/2, c)$ $\rightarrow$ 형상계수($\alpha_1$), 피복두께계수($\alpha_2$), 겹침이음계수($\alpha_{6,lo}$) $\rightarrow$ 통합 계수 $\alpha = \alpha_1 \cdot \alpha_2 \cdot \alpha_3 \cdot \alpha_4 \cdot \alpha_5 \cdot \alpha_6$
+   * 순간격 $a = \text{CTC} - d_b$ 및 단일 간격계수 $C_d = \min(a/2, c)$ $\rightarrow$ 형상계수($\alpha_1$), 피복두께계수($\alpha_2$), 겹침이음계수($\alpha_{6,lo}$) $\rightarrow$ 통합 계수 $\alpha = \alpha_1 \cdot \alpha_2 \cdot \alpha_3 \cdot \alpha_4 \cdot \alpha_5 \cdot \alpha_6$
 3. **철근사용률 ($A_{s,req}/A_{s,used}$) 산정**:
    * 정착부 중요성 고려 기본 `1.0` 적용 / 겹침이음부 응력 고려 기본 `0.7` 적용
 4. **최소정착길이 ($l_{bd,\min}$) 및 최소겹침이음길이 ($l_{o,\min}$) 산정**:

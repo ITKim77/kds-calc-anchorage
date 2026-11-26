@@ -4,7 +4,7 @@ export const DEFAULT_INPUT_STATE: AnchorageInputState = {
   fy: 400,
   fck: 35,
   cover: 30,
-  ignoreCoverForAnchorage: true,
+  ignoreCoverForAnchorage: false,
   ctc: 125,
   db: 19,
   bondCondition: 'good',
@@ -13,7 +13,7 @@ export const DEFAULT_INPUT_STATE: AnchorageInputState = {
   spliceAlpha6: 1.5,
   rebarUsageRatioAnchorage: 1.0,
   rebarUsageRatioSplice: 0.7,
-  useReferenceFixedClearSpacing: true,
+  useReferenceFixedClearSpacing: false,
 };
 
 /**
